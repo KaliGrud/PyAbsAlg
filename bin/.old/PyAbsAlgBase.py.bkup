@@ -1,0 +1,87 @@
+from abc        import  ABC,abstractmethod
+from typing     import  TypeVar,Union,\
+                        Container,Hashable,Sized,Callable,\
+                        Iterable,Iterator,Generator,Mapping,\
+                        Sequence,Tuple,MutableSequence,Any
+from itertools  import  product as cartesian_product
+
+Elem_t  = TypeVar("Elem_t")
+Pars_t  = TypeVar("Pars_t")
+Set_t   = TypeVar("Set_t",bound=Union[Container,Iterable,Sized])
+Alg_t   = TypeVar("Alg_t",bound=Sequence)
+
+Oper_t = Callable[[Elem_t,Elem_t],Elem_t]
+
+class AbsAlgElement(ABC):
+    @property
+    @abstractmethod
+    def __algebra__(self) -> Alg_t: ...
+    @abstractmethod
+    def __add__(self,othr) -> Elem_t: ...
+    @abstractmethod
+    def __sub__(self,othr) -> Elem_t: ...
+    @abstractmethod
+    def __mul__(self,othr) -> Elem_t: ...
+    @abstractmethod
+    def __truediv__(self,othr) -> Elem_t: ...
+    @abstractmethod
+    def __floordiv__(self,othr) -> Elem_t: ...
+
+class AbsAlgSet(ABC):
+    @property
+    @abstractmethod
+    def __parameters__(self) -> Tuple[Pars_t]: ...
+    @abstractmethod
+    def __elements__(self,*args) -> Iterable: ...
+    @abstractmethod
+    def __iter__(self) -> Iterator: ...
+
+class AbsOrderedAlgSet(AbsAlgSet):
+    @abstractmethod
+    def __is_less__(self,a:Elem_t,b:Elem_t) -> bool: ...
+    @abstractmethod
+    def __is_less_or_eq__(self,a:Elem_t,b:Elem_t) -> bool: ...
+    @abstractmethod
+    def __is_greater__(self,a:Elem_t,b:Elem_t) -> bool: ...
+    @abstractmethod
+    def __is_greater_or_equal__(self,a:Elem_t,b:Elem_t) -> bool: ...
+    @abstractmethod
+    def __is_equal__(self,a:Elem_t,b:Elem_t) -> bool: ...
+    @abstractmethod
+    def __is_not_equal__(self,a:Elem_t,b:Elem_t) -> bool: ...
+
+class AbsAlgebra(ABC):
+    @abstractmethod
+    def __identity__(self) -> Elem_t: ...
+    @abstractmethod
+    def __add_operator__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
+    @abstractmethod
+    def __sub_operator__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
+    @abstractmethod
+    def __mul_operator__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
+    @abstractmethod
+    def __right_div_operator__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
+    @abstractmethod
+    def __left_div_operator__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
+    def  __getitem__(self,key) -> Oper_t:
+        if   key == "+":  return self.__add_operator__
+        elif key == "-":  return self.__sub_operator__
+        elif key == "*":  return self.__mul_operator__
+        elif key == "/":  return self.__right_div_operator__
+        elif key == "//": return self.__left_div_operator__
+    def __generate_from_element__(self,*elems:Elem_t,op:str="*") -> Tuple[Elem_t]:
+        func = self[op]
+        out = tuple()
+        while len(elems) > 0:
+            out = (*out,*elems)
+            elems = set(c for a,b in cartesian_product(out,elems)\
+                    if (c:=func(a,b)) not in out)
+        return out
+
+class AbsAlgStructure(ABC):
+    @property
+    @abstractmethod
+    def __algebra__(self) -> Alg_t: ...
+    @property
+    @abstractmethod
+    def __algebraic_elements__(self,*pars,**kwargs) -> Set_t: ...
