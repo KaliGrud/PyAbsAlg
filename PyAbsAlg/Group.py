@@ -15,57 +15,19 @@ Oper_t  = Callable[[Elem_t,Elem_t],Elem_t]
 # Algebras as defined by their operators
 ############
 
-class AbsAlgebra(ABC):
-    @abstractmethod
-    def __addition__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
-    @abstractmethod
-    def __subtraction__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
-    @abstractmethod
-    def __multiplication__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
-    @abstractmethod
-    def __left_division__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
-    @abstractmethod
-    def __right_division__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
-    @abstractmethod
-    def __power__(self,a:Elem_t,n:int) -> Elem_t: ...
-
-    def __symb_to_operator__(self,op:str="*") -> Oper_t:
-        if op == "+":   return self.__addition__
-        if op == "-":   return self.__subtraction__
-        if op == "*":   return self.__multiplication__
-        if op == "/":   return self.__left_division__
-        if op == "//":  return self.__right_division__
-        if op == "**":  return self.__power__
-
-Alg_t   = TypeVar("Alg_t",bound=AbsAlgebra)
+class AbsAlgebra(ABC): ...
+Alg_t = TypeVar("Alg_t",bound=AbsAlgebra)
 
 class AbsMagmaAlgebra(AbsAlgebra):
-    @property
-    @abstractmethod
-    def __operator__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
-    def __addition__(self,*args) -> NoReturn:
-        raise NotImplementedError
-    def __subtraction__(self,*args) -> NoReturn:
-        raise NotImplementedError
-    def __multiplication__(self,a:Elem_t,b:Elem_t) -> Elem_t:
-        return self.__operator__(a,b)
-    def __power__(self,a:Elem_t,n:int):
-        return reduce(self.__multiplication__,[a]*n)
-
-class AbsUnitalMagmaAlgebra(AbsMagmaAlgebra):
-    @property
-    @abstractmethod
-    def __identity__(self): ...
-
-class AbsQuasigroupAlgebra(AbsMagmaAlgebra): ...
-class AbsLoopAlgebra(AbsUnitalMagmaAlgebra,AbsQuasigroupAlgebra): ...
-class AbsGroupAlgebra(AbsLoopAlgebra):
     """
-    Abstract class which defines a group's algebra by its
+    Abstract class which defines a magma's algebra by its
     binary operator and related functions.
     """
     @abstractmethod
     def __operator__(self,a:Elem_t,b:Elem_t,**pars:Pars_t) -> Elem_t: ...
+
+    def __power__(self,a:Elem_t,n:int):
+        return reduce(self.__operator__,[a]*n)
 
     def __generate_set_from_elements__(self,*elems:Elem_t,**pars:Pars_t) -> Tuple[Elem_t]:
         out: Tuple[Elem_t] = tuple()
@@ -74,9 +36,27 @@ class AbsGroupAlgebra(AbsLoopAlgebra):
             out = (*out,*new) # union of <out> and <new>
             new = set(c for a,b in product(out,elems)\
                   if (c:=self.__operator__(a,b,**pars)) not in out) 
-        return o
-    def __call__(self,a,b,**pars:Pars_t) -> Elem_t:
+        return out
+
+    def __call__(self,a:Elem_t,b:Elem_t,**pars:Pars_t) -> Elem_t:
         return self.__operator__(a,b,**pars)
+
+class AbsUnitalMagmaAlgebra(AbsMagmaAlgebra):
+    @property
+    @abstractmethod
+    def __identity__(self): ...
+
+class AbsQuasigroupAlgebra(AbsMagmaAlgebra):
+    @abstractmethod
+    def __left_divide__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
+    @abstractmethod
+    def __right_divide__(self,a:Elem_t,b:Elem_t) -> Elem_t: ...
+
+class AbsLoopAlgebra(AbsUnitalMagmaAlgebra,AbsQuasigroupAlgebra):
+    @abstractmethod
+    def __inverse__(self,a:Elem_t) -> Elem_t: ...
+
+class AbsGroupAlgebra(AbsLoopAlgebra): ...
 
 ############
 # Algebraic Structures
@@ -106,6 +86,11 @@ class AbsGroup(AbsLoop): ...
 ############
 # Algebraic Elements
 ############
+
+class AbsMagmaElement(AbsAlgebraicElement): ...
+class AbsUnitalMagmaElement(AbsMagmaElement): ...
+class AbsQuasigroupElement(AbsMagmaElement): ...
+class AbsLoopElement(AbsUnitalMagmaElement,AbsQuasigroupElement): ...
 
 class AbsGroupElement(ABC):
     @property
