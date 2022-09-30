@@ -1,4 +1,4 @@
-import numpy as np
+from sys    import  maxsize
 from typing import  TypeVar,NewType,Union,Optional,Literal,\
                     Container,Hashable,Sized,Callable,\
                     Iterable,Iterator,Generator,Mapping,\
@@ -6,27 +6,50 @@ from typing import  TypeVar,NewType,Union,Optional,Literal,\
                     NoReturn,Any
 from abc    import  ABC,abstractmethod
 
+MAX_INT = maxsize
+
+############
+# Type Hinting Aliases
+############
+
+"""
+Postfix key:
+    t : <type>
+    o : Optional[<type>] = Union[<type>,None]
+    n : Union[<type>,None,NoReturn]
+    f : Callable[[<type>,...],<type>]
+    u : Union[Callable[[<type>,...],<type>],<type>,None,NoReturn]
+"""
+
+Pars__t  = TypeVar("Pars__t") # Algebraic element
+Pars__o  = Optional[Pars__t] 
+Pars__e  = Union[Pars__o,NoReturn]
+Pars__f  = Callable[[Pars__e,...],Pars__e]
+Pars__u  = Union[Pars__f,Pars__e]
+
+Elem__t  = TypeVar("Elem__t") # Algebraic element
+Elem__o  = Optional[Elem__t] 
+Elem__e  = Union[Elem__o,NoReturn]
+Elem__f  = Callable[[Elem__e,...],Elem__e]
+Elem__u  = Union[Elem__f,Elem__e]
+
+Set__t   = Iterable[Elem__t] # Algebraic set
+Set__o   = Optional[Set__t]
+Set__e   = Union[Set__o,NoReturn]  
+Set__f   = Callable[[Set__e,...],Set__e]  
+Set__u   = Union[Set__f,Set__e]  
+
+Oper__t  = Callable[[Elem__t,Elem__t],Elem__t] # Binary operator
+Oper__o  = Optional[Oper__t]
+Oper__e  = Union[Oper__t,NoReturn] 
+Oper__f  = Callable[[Oper__e,...],Oper__e] 
+Oper__u  = Union[Oper__f,Oper__e] 
+
 ############
 # Abstract Algebra Class
 ############
 
-Elem_t  = TypeVar("Elem_t")                 # Algebraic element
-Pars_t  = TypeVar("Pars_t")                 # Function parameters
-Set_t   = Iterable[Elem_t]                  # Algebraic set
-Oper_t  = Callable[[Elem_t,Elem_t],Elem_t]  # Binary operator
-
-Elem_opt  = Optional[Elem_t]  # Algebraic element as optional
-Pars_opt  = Optional[Pars_t]  # Function parameters as optional
-Set_opt   = Optional[Set_t]   # Algebraic set as optional 
-Oper_opt  = Optional[Oper_t]  # Binary operator as optional
-
-Elem_err  = Union[Elem_opt]  # Algebraic element as optional
-Pars_err  = Union[Pars_opt]  # Function parameters as optional
-Set_err   = Union[Set_opt]   # Algebraic set as optional 
-Oper_err  = Union[Oper_opt]  # Binary operator as optional
-
 class AbsAlgebra(ABC):
-    @abstractmethod
     def __init__(self,*args,**kwargs) -> None:
         self._operators = { "+",self.__addition__,
                             "*",self.__multiplication__,
@@ -35,44 +58,51 @@ class AbsAlgebra(ABC):
                             "/",self.__right_divide__,
                             "//",self.__left_divide__,
                             "**",self.__power__, }
-    def __addition__(self,a:Elem_t,b:Elem_t) -> Oper_t:
-        raise NotImplementedError
-    def __multiplication__(self,a:Elem_t,b:Elem_t) -> Oper_t:
-        raise NotImplementedError
-    def __matrix_mul__(self,a:Elem_t,b:Elem_t) -> Oper_t:
-        raise NotImplementedError
-    def __subtraction__(self,a:Elem_t,b:Elem_t) -> Oper_t:
-        raise NotImplementedError
-    def __left_division__(self,a:Elem_t,b:Elem_t) -> Oper_t:
-        raise NotImplementedError
-    def __right_division__(self,a:Elem_t,b:Elem_t) -> Oper_t:
-        raise NotImplementedError
-    def __power__(self,a:Elem_t,n:int) -> Oper_t:
-        raise NotImplementedError
-    def __getitem__(self,key:str) -> Oper_t:
+    @abstractmethod
+    def __addition__(self,a:Elem__u,b:Elem__u,**kw) -> Oper__u: ...
+    @abstractmethod
+    def __multiplication__(self,a:Elem__u,b:Elem__u,**kw) -> Oper__u: ...
+    @abstractmethod
+    def __matrix_mul__(self,a:Elem__u,b:Elem__u,**kw) -> Oper__u: ...
+    @abstractmethod
+    def __subtraction__(self,a:Elem__u,b:Elem__u,**kw) -> Oper__u: ...
+    @abstractmethod
+    def __left_division__(self,a:Elem__u,b:Elem__u,**kw) -> Oper__u: ...
+    @abstractmethod 
+    def __right_division__(self,a:Elem__u,b:Elem__u,**kw) -> Oper__u: ...
+    @abstractmethod 
+    def __power__(self,a:Elem__u,n:int) -> Elem__u: ...
+    def __getitem__(self,key:str) -> Oper__e:
         return self._operators[key]
-    def __setitem__(self,key:str,value:Oper_t) -> Oper_t:
+    def __setitem__(self,key:str,value:Oper__e) -> Oper__e:
         self._operators[key] = value
         return value
-    def get(self,key:str,default:Oper_opt=None) -> Oper_opt:
+    def get(self,key:str,default:Oper__o=None) -> Oper__o:
         return self._operators.get(key,default)
 
-Alg_t = TypeVar("Alg_t",bound=AbsAlgebra)
+Alg__t = TypeVar("Alg__t",bound=AbsAlgebra)
+Alg__o = Optional[Alg__t]
+Alg__e = Union[Alg__o,NoReturn]
+Alg__f = Callable[[Alg__e,...],Alg__e]
+Alg__u = Union[Alg__f,Alg__e]
 
 ############
 # Abstract Algebra Structure
 ############
 
-
 class AbsAlgStructure(ABC):
     @property
     @abstractmethod
-    def __algebra__(self) -> Alg_t: ...
+    def __algebra__(self) -> Alg__t: ...
     @property
     @abstractmethod
-    def __elements__(self) -> Set_t: ...
+    def __elements__(self) -> Set__t: ...
 
-Struc_t = TypeVar("Struc_t",bound=AbsAlgStructure)
+Struc__t = TypeVar("Struc__t",bound=AbsAlgStructure)
+Struc__o = Optional[Struc__t]
+Struc__e = Union[Struc__o,NoReturn]
+Struc__f = Callable[[Struc__e,...],Struc__e]
+Struc__u = Union[Struc__f,Struc__e]
 
 ############
 # Cardinality
@@ -80,52 +110,49 @@ Struc_t = TypeVar("Struc_t",bound=AbsAlgStructure)
 
 class AlephNumber:
     """
-    Class for Aleph Numbers, i.e. the cardinalties of some infinite sets
-    e.g.
-    >>> Aleph0 = Integers.cardinality
-    >>> Aleph1 = Reals.cardinatity
+    Class for Aleph Numbers
+    i.e. the cardinalties of some infinite sets
     """
     def __init__(self,alpha:int) -> None:
         self.alpha = alpha
-    def __len__(self) -> Literal[np.inf]:
-        return np.inf
+    def __len__(self) -> Literal[MAX_INT]:
+        return MAX_INT
     def __eq__(self,othr) -> Optional[bool]:
         try:                                                          
             return self.alpha == othr.alpha
         except AttributeError:
-            return None if othr == np.inf else False
+            return None if othr == MAX_INT else False
     def __ne__(self,othr) -> Optional[bool]:
         try:
             return self.alpha != othr.alpha
         except AttributeError:
-            return None if othr != np.inf else True
+            return None if othr == MAX_INT else True
     def __lt__(self,othr) -> Optional[bool]:
         try:
             return self.alpha < othr.alpha
         except AttributeError:
-            return None if othr < np.inf else False
+            return None if othr == MAX_INT else False
     def __le__(self,othr) -> Optional[bool]:
         try:
             return self.alpha <= othr.alpha
         except AttributeError:
-            return False if othr > np.inf else None
+            return None if othr == MAX_INT else False
     def __gt__(self,othr) -> Optional[bool]:
         try:
             return self.alpha > othr.alpha
         except AttributeError:
-            return True if othr <= np.inf else None
+            return None if othr == MAX_INT else True
     def __ge__(self,othr) -> Optional[bool]:
         try:
             return self.alpha >= othr.alpha
         except AttributeError:
-            return True if othr < np.inf else None 
-    def __rpow__(self,othr):
-        if othr != 2 or self.alpha != 0:
-            raise ValueError
-        else:
-            return AlephNumber(1)
+            return None if othr == MAX_INT else True
 
-Card_t = Union[int,float,AlephNumber]
+Card__t = Union[int,float,AlephNumber]
+Card__o = Optional[Card__t]
+Card__e = Union[Card__o,NoReturn]
+Card__f = Callable[[Card__e,...],Card__e]
+Card__u = Union[Card__f,Card__e]
 
 Aleph0 = AlephNumber(0)
 Aleph1 = AlephNumber(1) 
@@ -136,17 +163,43 @@ Aleph1 = AlephNumber(1)
 
 class AbsAlgSet(ABC):
     @property
+    def cardinality(self) -> Card__t:
+        return self.__cardinality__()
     @abstractmethod
-    def __cardinality__(self) -> Card_t: ...
+    def __cardinality__(self) -> Card__t: ...
     @abstractmethod
-    def __contains__(self,obj) -> bool: ...
+    def __contains__(self,elem:Elem__t,**kw) -> bool: ...
     @abstractmethod
-    def __iter__(self) -> Iterable: ...
+    def __iter__(self): ...
     @abstractmethod
-    def __next__(self) -> Elem_t: ...
+    def __next__(self) -> Elem__t: ...
+    def __len__(self) -> Card__t:
+        return self.__cardinality__
 
-AlgSet_t = TypeVar("AlgSet_t",bound=AbsAlgSet)
-Set_t  = Union[Set_t,AlgSet_t]
+Set__t = Union[Set__t,TypeVar("Set__t",bound=AbsAlgSet)]
+
+class AbsDiscreteAlgSet(AbsAlgSet):
+    @property
+    @abstractmethod
+    def __cardinality__(self) -> Card__t: ...
+
+# Common algebraic sets
+
+class NATURALS(AbsAlgSet):
+    @property
+    def __cardinality__(self) -> Literal[Aleph0]:
+        return Aleph0
+    def __contains__(self,elem:Elem__t) -> bool:
+        return elem == int(elem) 
+    def __iter__(self):
+        self.n = -1
+        return self
+    def __next__(self):
+        self.n += 1
+        if self.n < MAX_INT:
+            return self.n
+        else:
+            raise StopIteration
 
 ############
 # Abstract Algebra Element
@@ -155,23 +208,23 @@ Set_t  = Union[Set_t,AlgSet_t]
 class AbsAlgElement(ABC):
     @property
     @abstractmethod
-    def __structure__(self) -> Struc_t: ...
+    def __structure__(self) -> Struc__t: ...
     @property
-    def __algebra__(self) -> Alg_t:
+    def __algebra__(self) -> Alg__t:
         return self.__structure__.__algebra__
-    def __add__(self,othr) -> Elem_t:
+    def __add__(self,othr) -> Elem__t:
         return self.__algebra__["+"](self,othr)
-    def __mul__(self,othr) -> Elem_t:
+    def __mul__(self,othr) -> Elem__t:
         return self.__algebra__["*"](self,othr)
-    def __matmul__(self,othr) -> Elem_t:
+    def __matmul__(self,othr) -> Elem__t:
         return self.__algebra__["@"](self,othr)
-    def __sub__(self,othr) -> Elem_t:
+    def __sub__(self,othr) -> Elem__t:
         return self.__algebra__["-"](self,othr)
-    def __truediv__(self,othr) -> Elem_t:
+    def __truediv__(self,othr) -> Elem__t:
         return self.__algebra__["/"](self,othr)
-    def __floordiv__(self,othr) -> Elem_t:
+    def __floordiv__(self,othr) -> Elem__t:
         return self.__algebra__["//"](self,othr)
-    def __pow__(self,othr) -> Elem_t:
+    def __pow__(self,othr) -> Elem__t:
         return self.__algebra__["**"](self,othr)
 
-Elem_t  = Union[Elem_t,AbsAlgElement]
+Elem__t = Union[Elem__t,TypeVar("Elem__t",bound=AbsAlgElement)]
